@@ -60,5 +60,21 @@ namespace MusicApi.Controllers
             return NoContent(); 
         }
 
+        [Authorize(Roles = "User")]
+        [HttpPatch("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userId, out var id))
+            {
+                return Unauthorized();
+            }
+            var result = await _userService.ChangePassword(id, request);
+            if (!result)
+            {
+                return BadRequest("Current password is incorrect.");
+            }
+            return NoContent();
+        }
     }
 }

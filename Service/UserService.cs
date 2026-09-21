@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BCrypt.Net;
+using FirebaseAdmin.Auth.Hash;
+using Microsoft.EntityFrameworkCore;
 using MusicApi.Data;
 using MusicApi.IService;
 using MusicApi.Request;
@@ -48,7 +50,7 @@ namespace MusicApi.Service
 
         public async Task<bool> UpdateUser(int id, UserRequest request)
         {
-            var userInDb = await _context.Users.FindAsync(id);
+            var userInDb = await _context.Users.FindAsync(id);  
             if (userInDb == null)
             {
                 return false;
@@ -58,6 +60,24 @@ namespace MusicApi.Service
             userInDb.Avatar = request.Avatar;
             userInDb.Email = request.Email;
             
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ChangePassword(int id, ChangePasswordRequest request)
+        {
+            var userInDb = await _context.Users.FindAsync(id);
+            if (userInDb == null)
+            {
+                return false;
+            }
+            var isValid = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, userInDb.PasswordHash);
+            if (!isValid)
+            {
+                return false;
+            }
+
+            userInDb.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await _context.SaveChangesAsync();
             return true;
         }

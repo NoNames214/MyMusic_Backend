@@ -12,17 +12,28 @@ namespace MyMusic.Manager
     public class SongController : ControllerBase
     {
         private readonly ISongService _isongService;
-        public SongController(ISongService isongService)
+        private readonly ILogger<SongController> _logger;
+        public SongController(ISongService isongService, ILogger<SongController> logger)
         {
             _isongService = isongService;
+            _logger = logger;
         }
 
         [HttpGet]
         [Authorize(Roles = "Admin, User")]
         public async Task<ActionResult<IEnumerable<SongResponse>>> GetAll([FromQuery] PageResult @params)
         {
-            var song = await _isongService.GetAll(@params);
-            return Ok(song);
+            try
+            {
+                _logger.LogInformation("Fetching all songs with parameters: {@Params}", @params);
+                var song = await _isongService.GetAll(@params);
+                return Ok(song);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching all songs.");
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpGet("{id}")]

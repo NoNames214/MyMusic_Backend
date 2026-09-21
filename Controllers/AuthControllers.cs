@@ -12,9 +12,11 @@ namespace MusicApi.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        public AuthController(IAuthService authService)
+        private readonly ILogger<AuthController> _logger;
+        public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
             _authService = authService;
+            _logger = logger;
         }
 
         [HttpPost("register")]
@@ -33,14 +35,24 @@ namespace MusicApi.Controllers
         [HttpPost("login")]
         public async Task<ActionResult> Login([FromBody] LoginRequest request)
         {
-            var result = await _authService.Login(request);
-
-            if (result == null)
+            try
             {
-                return Unauthorized();
-            }
+                _logger.LogInformation("Login attempt for user: {UserName}", request.UserName);
+                var result = await _authService.Login(request);
 
-            return Ok(result);
+                if (result == null)
+                {
+                    _logger.LogWarning("Login failed for user: {UserName}", request.UserName);
+                    return Unauthorized();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during login for user: {UserName}", request.UserName);
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpPost("refresh")]

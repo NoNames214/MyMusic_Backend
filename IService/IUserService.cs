@@ -10,5 +10,7 @@ namespace MusicApi.IService
         Task<bool> UpdateUser (int id, UserRequest request);
 
         Task<bool> DeleteUser (int id);
+
+        Task<bool> ChangePassword(int id, ChangePasswordRequest request);
     }
 }

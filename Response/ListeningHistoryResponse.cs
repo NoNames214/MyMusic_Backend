@@ -8,6 +8,6 @@
         public string? Artist { get; set; }
         public string? Title { get; set; }
         public string? Image { get; set; }
-        public DateTime PlayedAt { get; set; }
+        public DateTimeOffset PlayedAt { get; set; }
     }
 }
