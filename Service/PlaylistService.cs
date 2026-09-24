@@ -34,7 +34,12 @@ namespace MusicApi.Service
                         Id = ps.Song!.Id,
                         Title = ps.Song.Title,
                         Artist = ps.Song.Artist,
-                        Duration = ps.Song.Duration
+                        Source = ps.Song.Source,
+                        Image = ps.Song.Image,
+                        Duration = ps.Song.Duration,
+                        Counter = ps.Song.Counter,
+                        Replay = ps.Song.Replay,
+                        Favorite = ps.Song.Favorites!.Any(f => f.UserId == userId),
                     }).ToList()
                 })
                 .ToListAsync();

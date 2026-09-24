@@ -9,7 +9,6 @@ namespace MusicApi.Request
         public string? UserName { get; set; }
         [Required]
         public string? Email { get; set; }
-        [Required]
-        public string? Avatar { get; set; }
+        public IFormFile? Avatar { get; set; }
     }
 }

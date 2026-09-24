@@ -36,7 +36,7 @@ namespace MusicApi.Controllers
 
         [Authorize(Roles = "Admin, User")]
         [HttpPut]
-        public async Task<IActionResult> UpdateUser(UserRequest request)
+        public async Task<IActionResult> UpdateUser([FromForm]UserRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userId, out var id))
@@ -60,7 +60,7 @@ namespace MusicApi.Controllers
             return NoContent(); 
         }
 
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Admin, User")]
         [HttpPatch("change-password")]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {

@@ -118,6 +118,12 @@ try
         });
     });
 
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+        options.InstanceName = "MusicApi_";
+    });
+
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
