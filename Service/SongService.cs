@@ -1,19 +1,57 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using MusicApi.Data;
 using MusicApi.Models;
 using MusicApi.Page;
 using MusicApi.Request;
 using MusicApi.Response;
+using System.Text.Json;
 
 namespace MusicApi.Service
 {
     public class SongService : ISongService
     {
         private readonly AppDbContext _context;
+        private readonly IDistributedCache _distributedCache;
 
-        public SongService(AppDbContext context)
+        public SongService(AppDbContext context, IDistributedCache distributedCache)
         {
             _context = context;
+            _distributedCache = distributedCache;
+        }
+        
+        public async Task<List<SongResponse>> GetTrendingSongs ()
+        {
+            string cacheKey = "trending_songs";
+            var cachedData = await _distributedCache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                return JsonSerializer.Deserialize<List<SongResponse>>(cachedData)!;
+            }
+            var songsInDb = await _context.Songs
+                .AsNoTracking()
+                .OrderByDescending(s => s.Counter)
+                .Take(5)
+                .Select(s => new SongResponse
+                {
+                    Id = s.Id,
+                    Title = s.Title,
+                    Artist = s.Artist,
+                    Duration = s.Duration,
+                    Source = s.Source,
+                    Counter = s.Counter,
+                    Replay = s.Replay,
+                    AlbumId = s.AlbumId,
+                    Image = s.Image ?? (s.Album != null ? s.Album.Image : "N/A")
+                }).ToListAsync();
+
+            var cachedOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+            };
+            var jsonToCache = JsonSerializer.Serialize(songsInDb);
+            await _distributedCache.SetStringAsync(cacheKey, jsonToCache, cachedOptions);
+            return songsInDb;
         }
 
         public async Task<List<SongResponse>> GetAll(PageResult @params)
@@ -145,27 +183,6 @@ namespace MusicApi.Service
                 })
                 .ToListAsync();
             return song;
-        }
-
-        public async Task<List<SongResponse>> GetTopTrending()
-        {
-            return await _context.Songs
-                .AsNoTracking()
-                .OrderByDescending(s => s.Counter)
-                .Take(5)
-                .Select(s => new SongResponse
-                {
-                    Id = s.Id,
-                    Title = s.Title,
-                    Artist = s.Artist,
-                    Duration = s.Duration,
-                    Source = s.Source,
-                    Counter = s.Counter,
-                    Replay = s.Replay,
-                    AlbumId = s.AlbumId,
-                    Image = s.Image ?? (s.Album != null ? s.Album.Image : "N/A")
-                })
-                .ToListAsync();
         }
 
         public async Task<List<SongResponse>> GetByAlbumId(int albumId)

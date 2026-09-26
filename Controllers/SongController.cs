@@ -19,6 +19,23 @@ namespace MyMusic.Manager
             _logger = logger;
         }
 
+        [HttpGet("top-trending")]
+        [Authorize(Roles = "Admin, User")]
+        public async Task<ActionResult<IEnumerable<SongResponse>>> GetTrendingSongs()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching trending songs.");
+                var songs = await _isongService.GetTrendingSongs();
+                return Ok(songs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching trending songs.");
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
+        }
+
         [HttpGet]
         [Authorize(Roles = "Admin, User")]
         public async Task<ActionResult<IEnumerable<SongResponse>>> GetAll([FromQuery] PageResult @params)
@@ -97,14 +114,6 @@ namespace MyMusic.Manager
         public async Task<ActionResult<IEnumerable<SongResponse>>> SearchSongs([FromQuery] string keyword)
         {
             var songs = await _isongService.SearchSong(keyword);
-            return Ok(songs);
-        }
-
-        [HttpGet("Top-trending")]
-        [Authorize(Roles = "Admin, User")]
-        public async Task<ActionResult<IEnumerable<SongResponse>>> GetTopTrending()
-        {
-            var songs = await _isongService.GetTopTrending();
             return Ok(songs);
         }
     }

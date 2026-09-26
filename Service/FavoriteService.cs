@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using MusicApi.Data;
 using MusicApi.IService;
 using MusicApi.Models;
@@ -10,9 +11,11 @@ namespace MusicApi.Service
     public class FavoriteService : IFavoriteService
     {
         private readonly AppDbContext _context;
-        public FavoriteService(AppDbContext context)
+        private readonly IDistributedCache _distributedCache;
+        public FavoriteService(AppDbContext context, IDistributedCache distributedCache)
         {
             _context = context;
+            _distributedCache = distributedCache;
         }
 
         public async Task<List<FavoriteResponse>> GetAll()
@@ -65,6 +68,7 @@ namespace MusicApi.Service
             var existingFavorite = await _context.Favorites
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(f => f.UserId == userId && f.SongId == request.SongId);
+  
             if (existingFavorite != null && !existingFavorite.isDeleted)
             {
                 throw new Exception("Song is already favorited.");
@@ -103,7 +107,7 @@ namespace MusicApi.Service
                 song.Counter++;
                 _context.Favorites.Add(newFavorite);
                 await _context.SaveChangesAsync();
-
+                await _distributedCache.RemoveAsync("trending_songs");
                 return await _context.Favorites
                     .Where(f => f.Id == newFavorite.Id)
                     .Select(f => new FavoriteResponse
@@ -143,6 +147,7 @@ namespace MusicApi.Service
             favorite.isDeleted = true;
             favorite.DeleteAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            await _distributedCache.RemoveAsync("trending_songs");
             return true;
         }
     }

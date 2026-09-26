@@ -6,6 +6,7 @@ namespace MusicApi.Service
 {
     public interface ISongService
     {
+        Task<List<SongResponse>> GetTrendingSongs();
         Task<List<SongResponse>> GetAll(PageResult @params);
 
         Task<SongResponse?> GetById(int id);
@@ -19,6 +20,5 @@ namespace MusicApi.Service
 
         Task<List<SongResponse>> SearchSong(string keyword);
 
-        Task<List<SongResponse>> GetTopTrending();
     }
 }
